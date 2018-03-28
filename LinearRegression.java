@@ -5,6 +5,7 @@ import weka.classifiers.Classifier;
 import weka.core.Capabilities;
 import weka.core.Instance;
 import weka.core.Instances;
+import weka.core.SystemInfo;
 
 public class LinearRegression implements Classifier {
 
@@ -41,13 +42,15 @@ public class LinearRegression implements Classifier {
 		double temperror;
 		double error = Double.MAX_VALUE;
 
-		for (int i = -17; i <= 1; i++) {
+		for (int i = -17; i < 1; i++) {
 			m_alpha = Math.pow(3,i);
 			for (int j = 0; j < 20000; j++) {
 				gradientDescent(data);
-				if (j % 100 == 0) {
+
+				if (((j % 100) == 0) && (j != 0)) {
 					temperror = calculateMSE(data);
-					if (temperror < error) {
+
+					if (temperror <= error) {
 						error = temperror;
 					} else {
 						return;
@@ -71,48 +74,68 @@ public class LinearRegression implements Classifier {
 	//simultaneous updates using temps - recitation 1 page 14
 	//minimizes average square error -> we use calculateMSE method below to calculate the MSE
 	private double[] gradientDescent(Instances trainingData) throws Exception {
-
-		double [] tempThetaArr = new double[m_truNumAttributes];
+		boolean done = false;
+		double [] tempThetaArr = new double[m_coefficients.length];
 		double sumj = theta0;
 		double temperror;
 		double error = 0;
-
+		//initialize the m_coefficients array
+		for (int i = 0; i < m_coefficients.length; i++) {
+			m_coefficients[i] = 1;
+		}
 		//fill an array of the theta temp values for simultaneous update
-		for (int i = 0; i < 5; i++) {
-			System.out.println("why arent i printing in gradientDescent? ");
 
-			for (int j = 1; j < trainingData.numInstances(); j++) {
-				System.out.println("j =  " + j);
+		while (done == false) {
+			if(done == false) {
+				for (int i = 0; i < m_coefficients.length; i++) {
+					System.out.println("i = " + i);
+					if (done == false) {
+						for (int j = 1; j < trainingData.numInstances() - 1; j++) {
+							System.out.println("j = " + j);
 
-				sumj += (regressionPrediction(trainingData.instance(j)) -
-						trainingData.instance(j).value(m_ClassIndex));
-				//handling theta0 separately
-				if (i != 0) sumj *= trainingData.instance(j).value(i);
-				System.out.println("sumj =  " + sumj);
+							sumj += (regressionPrediction(trainingData.instance(j)) -
+									trainingData.instance(j).value(m_ClassIndex));
+							System.out.println("sumj = " + sumj);
 
-			}
-			tempThetaArr[i] = m_coefficients[i] - (m_alpha / trainingData
-					.numInstances() * sumj);
+							//handling theta0 separately
+							if (i != 0) {
+								sumj *= trainingData.instance(j).value(i);
+								System.out.println("sumj = " + sumj);
+							}
+						}
+					}
 
-			temperror = calculateMSE(trainingData);
-			System.out.println("temperror in gradientDescent is: " + temperror);
+					tempThetaArr[i] = m_coefficients[i] -
+							(m_alpha / trainingData.numInstances() * sumj);
+					System.out.println("temp array at place i = " + tempThetaArr[i]);
 
-			if (error - temperror >= 0.003) {
-				error = temperror;
-				for (int k = 0; k < m_truNumAttributes; k++) {
-					m_coefficients[k] = tempThetaArr[k];
+					temperror = calculateMSE(trainingData);
+					System.out.println("temperror = " + temperror);
+
+					if (error - temperror >= 0.003) {
+						error = temperror;
+						for (int k = 0; k < m_truNumAttributes; k++) {
+							m_coefficients[k] = tempThetaArr[k];
+						}
+					} else {
+						done = true;
+						System.out.println("done = " + done);
+						break;
+						//return m_coefficients;
+					}
 				}
 			}
-			else {
-				System.out.println("m_coefficients in gradientDescent is: " + m_coefficients);
-				return m_coefficients;
-			}
+		}
+		if (done == true) {
+			return m_coefficients;
 		}
 		//copy the thetas that we found that minimize the squared error into m_coefficients global variable
 		for (int k = 0; k < m_truNumAttributes; k++) {
 			theta0 = tempThetaArr[0];
 			m_coefficients[k] = tempThetaArr[k];
 		}
+		System.out.println("returned at the end");
+
 		return m_coefficients;
 	}
 
@@ -127,8 +150,8 @@ public class LinearRegression implements Classifier {
 	public double regressionPrediction(Instance instance) throws Exception {
 
 		double sum = theta0;
-		for (int i = 0; i < m_coefficients.length - 1; i++) {
-			sum += (instance.value(i) * m_coefficients[i + 1]);
+		for (int i = 1; i < m_coefficients.length; i++) {
+			sum += (instance.value(i - 1) * m_coefficients[i]);
 		}
 
 		return sum;
@@ -150,9 +173,9 @@ public class LinearRegression implements Classifier {
 		for (int i = 0; i < data.numInstances() ; i++){
 			//h(theta(x^(i)) - y^(i)
 			mse += Math.pow((regressionPrediction(data.instance(i))
-					- data.instance(i).value(m_truNumAttributes)), 2);
+					- data.instance(i).value(m_ClassIndex)), 2);
 		}
-		return mse / (2 * data.numInstances());
+		return mse / (2.0 * data.numInstances());
 	}
 
 	@Override
