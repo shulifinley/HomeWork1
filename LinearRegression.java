@@ -13,7 +13,7 @@ public class LinearRegression implements Classifier {
 	private int m_truNumAttributes;
 	public double[] m_coefficients;
 	public double m_alpha;
-	
+
 
 	//building the LinearRegression object
 	LinearRegression(Instances data) throws Exception {
@@ -21,6 +21,7 @@ public class LinearRegression implements Classifier {
 		findAlpha(data);
 		m_coefficients = gradientDescent(data);
 	}
+
 	//the method which runs to train the linear regression predictor, i.e.
 	//finds its weights.
 	@Override
@@ -37,28 +38,53 @@ public class LinearRegression implements Classifier {
 	private void findAlpha(Instances data) throws Exception {
 		//according to piazza, uses gradientDescent method below!
 		//recitation page 20 for trial alpha values
-		m_coefficients = new double [data.numAttributes()];
-		double temperror;
+		m_coefficients = new double[data.numAttributes()];
+		double temperror = Double.MAX_VALUE;
 		double error = Double.MAX_VALUE;
+	//	boolean stop = false;
 
-		for (int i = -17; i < 1; i++) {
-			m_alpha = Math.pow(3,i);
-			for (int j = 0; j < 20000; j++) {
-				System.out.println("find alpha, round number: " + j + " i = " + i);
-				gradientDescent(data);
+				for (int i = -17; i < 1; i++) {
+						m_alpha = Math.pow(3, i);
+						for (int j = 0; j < 20000; j++) {
+					//		if (stop == false) {
 
-				if (((j % 100) == 0) && (j != 0)) {
-					temperror = calculateMSE(data);
+								//	System.out.println("find alpha, round number: " + j + " i" +
+								//			" = " + i);
+								gradientDescent(data);
+								//	System.out.println("m coeff " + m_coefficients[5]);
 
-					if (temperror <= error) {
-						error = temperror;
-					} else {
-						return;
-					}
+
+								if ((j % 100) == 0) {
+									temperror = calculateMSE(data);
+
+									for (int b = 0; b < m_coefficients.length;
+										 b++) {
+										System.out.println("coef " + b + " :" +
+												" " +
+												this.m_coefficients[b]);
+									}
+
+
+									if (temperror > error) {
+										System.out.println("??? " );
+										//			stop = true;
+										System.out.println("temperror = " + temperror);
+										System.out.println("error = " + error);
+										break;
+
+									} else if (temperror < error) {
+										error = temperror;
+										System.out.println("error = temperror");
+									}
+								}
+							}
+
+							return;
+						}
+
 				}
-			}
-		}
-	}
+
+
 
 	/**
 	 * An implementation of the gradient descent algorithm which should
@@ -74,52 +100,67 @@ public class LinearRegression implements Classifier {
 	//simultaneous updates using temps - recitation 1 page 14
 	//minimizes average square error -> we use calculateMSE method below to calculate the MSE
 	private double[] gradientDescent(Instances trainingData) throws Exception {
-		boolean done = false;
-		double [] tempThetaArr = new double[m_coefficients.length];
+		double[] tempThetaArr = new double[m_coefficients.length];
 		double sumj = m_coefficients[0];
 		double temperror;
 		double error = 0;
-		double ip = 0;
-			//initialize the m_coefficients array
-		for (int i = 0; i < m_coefficients.length; i++) {
-			m_coefficients[i] = 1;
-		}
+		double ip;
+
 
 		//fill an array of the theta temp values for simultaneous update
 
-			for (int i = 1; i < m_coefficients.length; i++) {
-				for (int j = 0; j < trainingData.numInstances() - 1; j++) {
+		for (int i = 1; i < m_coefficients.length; i++) {
+			//initialize the m_coefficients array
+			for (int t = 0; t < m_coefficients.length; t++) {
+				m_coefficients[t] = 1;
+			}
+			for (int j = 0; j < trainingData.numInstances(); j++) {
 
-					sumj += (regressionPrediction(trainingData.instance(j)) -
-							trainingData.instance(j).value(m_ClassIndex));
+				sumj += (regressionPrediction(trainingData.instance(j)) -
+						trainingData.instance(j).value(m_ClassIndex));
 
-					//handling theta0 separately
-					if (i != 0) {
-						ip = (sumj * trainingData.instance(j).value(i));
-					}
-				}
-
+				ip = (sumj * trainingData.instance(j).value(i));
 				tempThetaArr[i] = m_coefficients[i] -
 						(m_alpha / trainingData.numInstances() * ip);
-
-				temperror = calculateMSE(trainingData);
-
-				if (error - temperror >= 0.003) {
-					error = temperror;
-					for (int k = 0; k < m_truNumAttributes; k++) {
-						m_coefficients[k] = tempThetaArr[k];
-					}
-				} else {
-					return m_coefficients;
-				}
+		//		System.out.println("First update (temp theta arr) = " +
+		//				tempThetaArr[i]);
 			}
-
-		//copy the thetas that we found that minimize the squared error into m_coefficients global variable
-		for (int k = 0; k < m_truNumAttributes; k++) {
-			m_coefficients[k] = tempThetaArr[k];
 		}
+				temperror = calculateMSE(trainingData);
+//					System.out.println("temp error = " + temperror);
+//					System.out.println("error = " + error);
 
-		return m_coefficients;
+				if (Math.abs(error - temperror) > 0.003) {
+					error = temperror;
+
+					for (int k = 0; k < m_coefficients.length ; k++) {
+		//				System.out.println("k= " + k);
+
+						m_coefficients[k] = tempThetaArr[k];
+		//				System.out.println("1 m_coef = " + m_coefficients[k]);
+		//				System.out.println("1 temp theta array = " +
+		//						tempThetaArr[k]);
+
+					}
+					} else {
+						System.out.println("2. m_coef = " + m_coefficients[8]);
+
+							return m_coefficients;
+					}
+
+
+
+//
+//		//copy the thetas that we found that minimize the squared error into m_coefficients global variable
+//		for (int k = 0; k < m_truNumAttributes; k++) {
+//			m_coefficients[k] = tempThetaArr[k];
+//			System.out.println("2 m_coef = " + m_coefficients);
+//		}
+
+
+//			System.out.println("3. m_coef = " + m_coefficients[4]);
+			return m_coefficients;
+
 	}
 
 	/**
