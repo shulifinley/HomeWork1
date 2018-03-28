@@ -13,8 +13,7 @@ public class LinearRegression implements Classifier {
 	private int m_truNumAttributes;
 	public double[] m_coefficients;
 	public double m_alpha;
-
-	double theta0;
+	
 
 	//building the LinearRegression object
 	LinearRegression(Instances data) throws Exception {
@@ -45,6 +44,7 @@ public class LinearRegression implements Classifier {
 		for (int i = -17; i < 1; i++) {
 			m_alpha = Math.pow(3,i);
 			for (int j = 0; j < 20000; j++) {
+				System.out.println("find alpha, round number: " + j + " i = " + i);
 				gradientDescent(data);
 
 				if (((j % 100) == 0) && (j != 0)) {
@@ -76,65 +76,60 @@ public class LinearRegression implements Classifier {
 	private double[] gradientDescent(Instances trainingData) throws Exception {
 		boolean done = false;
 		double [] tempThetaArr = new double[m_coefficients.length];
-		double sumj = theta0;
+		double sumj = m_coefficients[0];
 		double temperror;
 		double error = 0;
-		//initialize the m_coefficients array
+			//initialize the m_coefficients array
 		for (int i = 0; i < m_coefficients.length; i++) {
 			m_coefficients[i] = 1;
 		}
+
 		//fill an array of the theta temp values for simultaneous update
 
-		while (done == false) {
-			if(done == false) {
-				for (int i = 0; i < m_coefficients.length; i++) {
-					System.out.println("i = " + i);
-					if (done == false) {
-						for (int j = 1; j < trainingData.numInstances() - 1; j++) {
-							System.out.println("j = " + j);
+			for (int i = 1; i < m_coefficients.length; i++) {
+//				System.out.println("i = " + i);
+				for (int j = 0; j < trainingData.numInstances() - 1; j++) {
+					//System.out.println("j = " + j);
+					System.out.println("reg pred "+ regressionPrediction
+							(trainingData.instance(j)));
+					System.out.println("not reg pred " + (trainingData
+							.instance(j).value(m_ClassIndex)));
+					sumj += (regressionPrediction(trainingData.instance(j)) -
+							trainingData.instance(j).value(m_ClassIndex));
+					System.out.println("sumj = " + sumj);
 
-							sumj += (regressionPrediction(trainingData.instance(j)) -
-									trainingData.instance(j).value(m_ClassIndex));
-							System.out.println("sumj = " + sumj);
-
-							//handling theta0 separately
-							if (i != 0) {
-								sumj *= trainingData.instance(j).value(i);
-								System.out.println("sumj = " + sumj);
-							}
-						}
-					}
-
-					tempThetaArr[i] = m_coefficients[i] -
-							(m_alpha / trainingData.numInstances() * sumj);
-					System.out.println("temp array at place i = " + tempThetaArr[i]);
-
-					temperror = calculateMSE(trainingData);
-					System.out.println("temperror = " + temperror);
-
-					if (error - temperror >= 0.003) {
-						error = temperror;
-						for (int k = 0; k < m_truNumAttributes; k++) {
-							m_coefficients[k] = tempThetaArr[k];
-						}
-					} else {
-						done = true;
-						System.out.println("done = " + done);
-						break;
-						//return m_coefficients;
+					//handling theta0 separately
+					if (i != 0) {
+					//	sumj *= trainingData.instance(j).value(i);
+						System.out.println("i != 0 : " + trainingData.instance(j).value(i));
 					}
 				}
+
+				tempThetaArr[i] = m_coefficients[i] -
+						(m_alpha / trainingData.numInstances());
+								//* sumj);
+				System.out.println("temp array at place i = " + tempThetaArr[i]);
+
+				temperror = calculateMSE(trainingData);
+
+//				if (error - temperror >= 0.003) {
+//					error = temperror;
+//					for (int k = 0; k < m_truNumAttributes; k++) {
+//						m_coefficients[k] = tempThetaArr[k];
+//					}
+//				} else {
+//					done = true;
+//					System.out.println("done = " + done);
+//					break;
+//					//return m_coefficients;
+//				}
 			}
-		}
-		if (done == true) {
-			return m_coefficients;
-		}
+
 		//copy the thetas that we found that minimize the squared error into m_coefficients global variable
 		for (int k = 0; k < m_truNumAttributes; k++) {
-			theta0 = tempThetaArr[0];
 			m_coefficients[k] = tempThetaArr[k];
 		}
-		System.out.println("returned at the end");
+//		System.out.println("returned at the end");
 
 		return m_coefficients;
 	}
@@ -149,7 +144,7 @@ public class LinearRegression implements Classifier {
 	 */
 	public double regressionPrediction(Instance instance) throws Exception {
 
-		double sum = theta0;
+		double sum = m_coefficients[0];
 		for (int i = 1; i < m_coefficients.length; i++) {
 			sum += (instance.value(i - 1) * m_coefficients[i]);
 		}
