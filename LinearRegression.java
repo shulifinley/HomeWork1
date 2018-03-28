@@ -79,6 +79,7 @@ public class LinearRegression implements Classifier {
 		double sumj = m_coefficients[0];
 		double temperror;
 		double error = 0;
+		double ip = 0;
 			//initialize the m_coefficients array
 		for (int i = 0; i < m_coefficients.length; i++) {
 			m_coefficients[i] = 1;
@@ -87,49 +88,36 @@ public class LinearRegression implements Classifier {
 		//fill an array of the theta temp values for simultaneous update
 
 			for (int i = 1; i < m_coefficients.length; i++) {
-//				System.out.println("i = " + i);
 				for (int j = 0; j < trainingData.numInstances() - 1; j++) {
-					//System.out.println("j = " + j);
-					System.out.println("reg pred "+ regressionPrediction
-							(trainingData.instance(j)));
-					System.out.println("not reg pred " + (trainingData
-							.instance(j).value(m_ClassIndex)));
+
 					sumj += (regressionPrediction(trainingData.instance(j)) -
 							trainingData.instance(j).value(m_ClassIndex));
-					System.out.println("sumj = " + sumj);
 
 					//handling theta0 separately
 					if (i != 0) {
-					//	sumj *= trainingData.instance(j).value(i);
-						System.out.println("i != 0 : " + trainingData.instance(j).value(i));
+						ip = (sumj * trainingData.instance(j).value(i));
 					}
 				}
 
 				tempThetaArr[i] = m_coefficients[i] -
-						(m_alpha / trainingData.numInstances());
-								//* sumj);
-				System.out.println("temp array at place i = " + tempThetaArr[i]);
+						(m_alpha / trainingData.numInstances() * ip);
 
 				temperror = calculateMSE(trainingData);
 
-//				if (error - temperror >= 0.003) {
-//					error = temperror;
-//					for (int k = 0; k < m_truNumAttributes; k++) {
-//						m_coefficients[k] = tempThetaArr[k];
-//					}
-//				} else {
-//					done = true;
-//					System.out.println("done = " + done);
-//					break;
-//					//return m_coefficients;
-//				}
+				if (error - temperror >= 0.003) {
+					error = temperror;
+					for (int k = 0; k < m_truNumAttributes; k++) {
+						m_coefficients[k] = tempThetaArr[k];
+					}
+				} else {
+					return m_coefficients;
+				}
 			}
 
 		//copy the thetas that we found that minimize the squared error into m_coefficients global variable
 		for (int k = 0; k < m_truNumAttributes; k++) {
 			m_coefficients[k] = tempThetaArr[k];
 		}
-//		System.out.println("returned at the end");
 
 		return m_coefficients;
 	}
